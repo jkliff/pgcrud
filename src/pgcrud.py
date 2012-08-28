@@ -14,7 +14,11 @@ def create (cur, entity, data):
         cols.append (k)
         vals.append (v)
 
-    sql = """insert into %s (%s) values (%s);""" % (entity, ', '.join (cols), ', '.join (["""'%s'""" % x for x in vals]))
+    sql = """insert into %s (%s) values (%s);""" % (
+        entity,
+        ', '.join (cols),
+        ', '.join (["""'%s'""" % x for x in vals])
+    )
     cur.execute (sql)
 
 def retrieve (cur, entity, data):
