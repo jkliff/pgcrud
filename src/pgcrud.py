@@ -2,6 +2,7 @@
 import sys
 import json
 import psycopg2
+import psycopg2.extras
 import yaml
 import os
 
@@ -14,9 +15,7 @@ def create (cur, entity, data):
         vals.append (v)
 
     sql = """insert into %s (%s) values (%s);""" % (entity, ', '.join (cols), ', '.join (["""'%s'""" % x for x in vals]))
-    print sql
     cur.execute (sql)
-
 
 def retrieve (cur, entity, data):
     pk = __get_pk (cur, entity)
@@ -24,14 +23,14 @@ def retrieve (cur, entity, data):
 from %(table_name)s
 where %(pk_name)s = %(id)s;""" % {'table_name': entity, 'pk_name': pk, 'id': data}
     cur.execute (sql)
-    print cur.fetchone()
+    r = cur.fetchone ()
+    print json.dumps (dict (r.items()))
 
 def update (cur, entity, data):
     pass
 
 def delete (cur, entity, data):
     pass
-
 
 def __get_pk (cur, table):
     sql = """select attname
@@ -71,7 +70,7 @@ def main (argv):
     data = json.loads (argv [4])
 
     conn = get_conn (load_profile_def (profile))
-    cur = conn.cursor ()
+    cur = conn.cursor (cursor_factory=psycopg2.extras.DictCursor)
     CMDS [method] (cur, entity, data)
     conn.commit ()
     cur.close ()
