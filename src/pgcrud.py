@@ -2,17 +2,19 @@
 import sys
 import json
 import psycopg2
+import yaml
+import os
 
-def create (conn, entity, data):
+def create (cur, entity, data):
     pass
 
-def retrieve (conn, entity, data):
+def retrieve (cur, entity, data):
     pass
 
-def update (conn, entity, data):
+def update (cur, entity, data):
     pass
 
-def delete (conn, entity, data):
+def delete (cur, entity, data):
     pass
 
 
@@ -23,9 +25,14 @@ CMDS = {
     'delete':   delete
 }
 
-def get_conn (profile):
-    pass
+def load_profile_def (profile):
+    with (open (os.path.expanduser ('~/.pgcrud/profiles'))) as p:
+        y = yaml.load (p)
+        return y['profiles'][profile]
 
+def get_conn (conn_str):
+    conn = psycopg2.connect (conn_str)
+    return conn
 
 def main (argv):
 
@@ -34,8 +41,11 @@ def main (argv):
     entity = argv [3]
     data = json.loads (argv [4])
 
-    with (get_conn (profile)) as conn:
-        CMDS [method] (conn, entity, data)
+    conn = get_conn (load_profile_def (profile))
+    cur = conn.cursor ()
+    CMDS [method] (cur, entity, data)
+    cur.close ()
+    conn.close ()
 
     return 0
 
