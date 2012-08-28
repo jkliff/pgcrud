@@ -6,10 +6,25 @@ import yaml
 import os
 
 def create (cur, entity, data):
-    pass
+
+    cols = []
+    vals = []
+    for k, v in data.iteritems ():
+        cols.append (k)
+        vals.append (v)
+
+    sql = """insert into %s (%s) values (%s);""" % (entity, ', '.join (cols), ', '.join (["""'%s'""" % x for x in vals]))
+    print sql
+    cur.execute (sql)
+
 
 def retrieve (cur, entity, data):
-    pass
+    pk = __get_pk (cur, entity)
+    sql = """select *
+from %(table_name)s
+where %(pk_name)s = %(id)s;""" % {'table_name': entity, 'pk_name': pk, 'id': data}
+    cur.execute (sql)
+    print cur.fetchone()
 
 def update (cur, entity, data):
     pass
@@ -17,6 +32,20 @@ def update (cur, entity, data):
 def delete (cur, entity, data):
     pass
 
+
+def __get_pk (cur, table):
+    sql = """select attname
+from pg_catalog.pg_class
+    join pg_catalog.pg_attribute on attrelid = pg_class.oid and attnum > 0
+    join pg_constraint on conrelid = pg_class.oid and attnum = any (conkey)
+where relname = %(table_name)s
+    and contype = 'p';
+"""
+    cur.execute (sql, {'table_name': table})
+    pk = cur.fetchone ()
+    if pk is None:
+        raise Exception ('either entity has no pk or does not exists.')
+    return pk [0]
 
 CMDS = {
     'create':   create,
@@ -44,6 +73,7 @@ def main (argv):
     conn = get_conn (load_profile_def (profile))
     cur = conn.cursor ()
     CMDS [method] (cur, entity, data)
+    conn.commit ()
     cur.close ()
     conn.close ()
 
