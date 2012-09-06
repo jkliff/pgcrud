@@ -21,11 +21,11 @@ def create (cur, entity, data):
     )
     cur.execute (sql)
 
-def retrieve (cur, entity, data):
-    pk = __get_pk (cur, entity)
+def retrieve (cur, entity, data, pk=__get_pk (cur, entity)):
     sql = """select *
 from %(table_name)s
 where %(pk_name)s = %(id)s;""" % {'table_name': entity, 'pk_name': pk, 'id': data}
+
     cur.execute (sql)
     r = cur.fetchone ()
     print json.dumps (dict (r.items()))
