@@ -6,6 +6,20 @@ import psycopg2.extras
 import yaml
 import os
 
+def __get_pk (cur, table):
+    sql = """select attname
+from pg_catalog.pg_class
+    join pg_catalog.pg_attribute on attrelid = pg_class.oid and attnum > 0
+    join pg_constraint on conrelid = pg_class.oid and attnum = any (conkey)
+where relname = %(table_name)s
+    and contype = 'p';
+"""
+    cur.execute (sql, {'table_name': table})
+    pk = cur.fetchone ()
+    if pk is None:
+        raise Exception ('either entity has no pk or does not exists.')
+    return pk [0]
+
 def create (cur, entity, data):
 
     cols = []
@@ -21,7 +35,10 @@ def create (cur, entity, data):
     )
     cur.execute (sql)
 
-def retrieve (cur, entity, data, pk=__get_pk (cur, entity)):
+def retrieve (cur, entity, data):
+
+    pk = __get_pk (cur, entity)
+
     sql = """select *
 from %(table_name)s
 where %(pk_name)s = %(id)s;""" % {'table_name': entity, 'pk_name': pk, 'id': data}
@@ -31,24 +48,17 @@ where %(pk_name)s = %(id)s;""" % {'table_name': entity, 'pk_name': pk, 'id': dat
     print json.dumps (dict (r.items()))
 
 def update (cur, entity, data):
-    pass
+    pk = __get_pk (cur, entity)
 
 def delete (cur, entity, data):
-    pass
+    pk = __get_pk (cur, entity)
 
-def __get_pk (cur, table):
-    sql = """select attname
-from pg_catalog.pg_class
-    join pg_catalog.pg_attribute on attrelid = pg_class.oid and attnum > 0
-    join pg_constraint on conrelid = pg_class.oid and attnum = any (conkey)
-where relname = %(table_name)s
-    and contype = 'p';
-"""
-    cur.execute (sql, {'table_name': table})
-    pk = cur.fetchone ()
-    if pk is None:
-        raise Exception ('either entity has no pk or does not exists.')
-    return pk [0]
+    sql = """delete from %(table_name)s
+where %(pk_name)s = %(id)s;
+""" % {'table_name': entity, 'pk_name': pk, 'id': data}
+
+    cur.execute (sql)
+    #r = cur.fetchone ()
 
 CMDS = {
     'create':   create,

@@ -57,3 +57,4 @@ TODO
 - possibly return created id on create
 - for update, rethink the format of passing the id to update
 - add proper validation of input parameters, specially what gets interpolated into sql.
+- handle failures
