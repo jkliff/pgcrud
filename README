@@ -1,0 +1,59 @@
+Overview
+========
+
+pgcrud is a simplistic but generic command line interface for crud operations over data persisted in postgresql. Generic here means that it works with (almost, see retrictions) any entity persisted in a postgres database. This is in no way suppoesed to handle complex queries (or any complexity).
+
+pgcrud works by providing an CLI interface for the creation and retrieval in JSON format of data from postgresql supporting 4 basic CRUD operations:
+- create
+- retrieve
+- update
+- delete
+
+
+Usage
+=====
+
+
+General command format is
+pgcrud.py PROFILE METHOD ENTITY DATA
+where all arguments are required and PROFILE is the profile name from the configuration file (see below), METHOD is one of the CRUD operations (create, retrieve, update or delete), ENTITY is the name of the entity (table) being referenced and DATA is the data being manipulated (its semantics depends of METHOD).
+
+PROFILEs com from the configuration file (~/.pgcrud/profiles) and contain a YAML formatted list of connection configurations.
+
+Below follows an usage example.
+
+Given a table such as
+    create table person (
+        id serial primary key,
+        name text,
+        age integer
+    );
+
+And a configuration file on ~/.pgcrud/profiles such as:
+
+    profiles:
+        test_profile: "host=localhost user=foo dbname=testdb"
+
+The following commands would work as expected:
+    pgcrud.py create test_profile person '{"name": "asdf", "age": 17}'
+suppose the created id was 9.
+    pgcrud.py retrieve person 9
+    pgcrud.py update person '{"id": 9, "name":  "qwer" }'
+    pgcrud.py delete person 9
+
+
+Restrictions
+============
+- entity (table) must have a numeric primary key; if not defined with some sort of auto increment (serial, bigserial) CREATE operations require that the PK be given. Update, retrieve and delete
+
+
+TODO
+====
+- better error handling
+- batch mode
+- handle shortcuts of commands
+- parameterize configuration file location
+- use ArgumentParser
+- possibly return created id on create
+- for update, rethink the format of passing the id to update
+- add proper validation of input parameters, specially what gets interpolated into sql.
