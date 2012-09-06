@@ -20,13 +20,19 @@ where relname = %(table_name)s
         raise Exception ('either entity has no pk or does not exists.')
     return pk [0]
 
-def create (cur, entity, data):
+def split_data (data):
 
     cols = []
     vals = []
     for k, v in data.iteritems ():
         cols.append (k)
         vals.append (v)
+
+    return cols, vals
+
+def create (cur, entity, data):
+
+    cols, vals = split_data (data)
 
     sql = """insert into %s (%s) values (%s);""" % (
         entity,
@@ -41,21 +47,44 @@ def retrieve (cur, entity, data):
 
     sql = """select *
 from %(table_name)s
-where %(pk_name)s = %(id)s;""" % {'table_name': entity, 'pk_name': pk, 'id': data}
+where %(pk_name)s = %(id)s;
+""" % {
+        'table_name': entity,
+        'pk_name': pk,
+        'id': data
+    }
 
     cur.execute (sql)
     r = cur.fetchone ()
     print json.dumps (dict (r.items()))
 
 def update (cur, entity, data):
+    """__ is the identifier of the id"""
+
     pk = __get_pk (cur, entity)
+
+    sql = """update %(table_name)s
+set %(update_cols)s
+where %(pk_name)s = %(id)s;
+""" % {
+        'table_name': entity,
+        'pk_name': pk,
+        'id': data ['__'],
+        'update_cols': ', '.join (["%s = '%s'" % (x, data [x]) for x in data.iterkeys() if x != '__'])
+    }
+    print sql
+    cur.execute (sql)
 
 def delete (cur, entity, data):
     pk = __get_pk (cur, entity)
 
     sql = """delete from %(table_name)s
 where %(pk_name)s = %(id)s;
-""" % {'table_name': entity, 'pk_name': pk, 'id': data}
+""" % {
+        'table_name': entity,
+        'pk_name': pk,
+        'id': data
+    }
 
     cur.execute (sql)
     #r = cur.fetchone ()

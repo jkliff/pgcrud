@@ -38,7 +38,10 @@ The following commands would work as expected:
     pgcrud.py create test_profile person '{"name": "asdf", "age": 17}'
 suppose the created id was 9.
     pgcrud.py retrieve person 9
-    pgcrud.py update person '{"id": 9, "name":  "qwer" }'
+    pgcrud.py update person '{"__": 9, "name":  "qwer" }'
+
+Notice the replacement of the PK column with __. If the column name is given explicitly it will be updated. The results of this depend on you table definition.
+
     pgcrud.py delete person 9
 
 
