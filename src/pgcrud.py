@@ -46,6 +46,11 @@ def __split_data (data):
 
     return cols, vals
 
+def __default_sql_data_converter (obj):
+    return obj.isoformat() if hasattr(obj, 'isoformat') else obj
+
+to_json = lambda x: json.dumps (x, default=__default_sql_data_converter)
+
 def create (cur, entity, data):
 
     cols, vals = __split_data (data)
@@ -77,7 +82,7 @@ where %(pk_name)s = %(id)s;
 
     cur.execute (sql)
     r = cur.fetchone ()
-    return json.dumps (dict (r.items()))
+    return to_json(dict (r.items()))
 
 def retrieve_all (cur, entity, data):
 
@@ -90,7 +95,7 @@ from %(table_name)s
     cur.execute (sql)
     r = cur.fetchall ()
 
-    return json.dumps ([dict (i) for i in r])
+    return to_json([dict (i) for i in r])
 
 
 def update (cur, entity, data):
