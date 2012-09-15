@@ -8,7 +8,7 @@ pgcrud works by providing an CLI interface for the creation and retrieval in JSO
 - retrieve
 - update
 - delete
-
+- list
 
 Usage
 =====
