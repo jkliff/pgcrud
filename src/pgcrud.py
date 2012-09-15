@@ -6,6 +6,22 @@ import psycopg2.extras
 import yaml
 import os
 
+def __load_profile_def (profile):
+    f = os.path.expanduser ('~/.pgcrud/profiles')
+
+    if not os.path.exists (f):
+        raise Exception ('Expected configuration file [%s] not expected.' % f)
+
+    with (open (f)) as p:
+        y = yaml.load (p)
+        if profile not in y ['profiles']:
+            raise Exception ('Requested profile [%s] not found in [%s]. ' % (profile, f))
+        return y['profiles'][profile]
+
+def __get_conn (conn_str):
+    conn = psycopg2.connect (conn_str)
+    return conn
+
 def __get_pk (cur, table):
     sql = """select attname
 from pg_catalog.pg_class
@@ -17,10 +33,10 @@ where relname = %(table_name)s
     cur.execute (sql, {'table_name': table})
     pk = cur.fetchone ()
     if pk is None:
-        raise Exception ('either entity has no pk or does not exists.')
+        raise Exception ('PGCrud does not support this entity: either it has no pk or does not exists.')
     return pk [0]
 
-def split_data (data):
+def __split_data (data):
 
     cols = []
     vals = []
@@ -32,14 +48,19 @@ def split_data (data):
 
 def create (cur, entity, data):
 
-    cols, vals = split_data (data)
+    cols, vals = __split_data (data)
+    pk = __get_pk (cur, entity)
 
-    sql = """insert into %s (%s) values (%s);""" % (
+    sql = """insert into %s (%s) values (%s) 
+returning %s;""" % (
         entity,
         ', '.join (cols),
-        ', '.join (["""'%s'""" % x for x in vals])
+        ', '.join (["""'%s'""" % x for x in vals]),
+        pk
     )
     cur.execute (sql)
+    r = cur.fetchone ()
+    return r [pk]
 
 def retrieve (cur, entity, data):
 
@@ -56,7 +77,21 @@ where %(pk_name)s = %(id)s;
 
     cur.execute (sql)
     r = cur.fetchone ()
-    print json.dumps (dict (r.items()))
+    return json.dumps (dict (r.items()))
+
+def retrieve_all (cur, entity, data):
+
+    sql = """select *
+from %(table_name)s
+""" % {
+        'table_name': entity,
+    }
+
+    cur.execute (sql)
+    r = cur.fetchall ()
+
+    return json.dumps ([dict (i) for i in r])
+
 
 def update (cur, entity, data):
     """__ is the identifier of the id"""
@@ -72,7 +107,7 @@ where %(pk_name)s = %(id)s;
         'id': data ['__'],
         'update_cols': ', '.join (["%s = '%s'" % (x, data [x]) for x in data.iterkeys() if x != '__'])
     }
-    print sql
+
     cur.execute (sql)
 
 def delete (cur, entity, data):
@@ -89,32 +124,36 @@ where %(pk_name)s = %(id)s;
     cur.execute (sql)
     #r = cur.fetchone ()
 
-CMDS = {
-    'create':   create,
-    'retrieve': retrieve,
-    'update':   update,
-    'delete':   delete
-}
-
-def load_profile_def (profile):
-    with (open (os.path.expanduser ('~/.pgcrud/profiles'))) as p:
-        y = yaml.load (p)
-        return y['profiles'][profile]
-
-def get_conn (conn_str):
-    conn = psycopg2.connect (conn_str)
-    return conn
-
 def main (argv):
+
+    CMDS = {
+        'create':   create,
+        'retrieve': retrieve,
+        'update':   update,
+        'delete':   delete,
+        'list':     retrieve_all
+    }
 
     profile = argv [1]
     method = argv [2]
     entity = argv [3]
-    data = json.loads (argv [4])
+    data = None
+    if method != 'list':
+        data = json.loads (argv [4])
 
-    conn = get_conn (load_profile_def (profile))
+    try:
+        conn = __get_conn (__load_profile_def (profile))
+    except Exception as e:
+        print e
+        print 'Aborting'
+        return -10
+
     cur = conn.cursor (cursor_factory=psycopg2.extras.DictCursor)
-    CMDS [method] (cur, entity, data)
+
+    r = CMDS [method] (cur, entity, data)
+    if r is not None:
+        print r
+
     conn.commit ()
     cur.close ()
     conn.close ()

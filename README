@@ -35,14 +35,18 @@ And a configuration file on ~/.pgcrud/profiles such as:
         test_profile: "host=localhost user=foo dbname=testdb"
 
 The following commands would work as expected:
-    pgcrud.py create test_profile person '{"name": "asdf", "age": 17}'
+    pgcrud.py test_profile create person '{"name": "asdf", "age": 17}'
 suppose the created id was 9.
-    pgcrud.py retrieve person 9
-    pgcrud.py update person '{"__": 9, "name":  "qwer" }'
+    pgcrud.py test_profile retrieve person 9
+    pgcrud.py test_profile update person '{"__": 9, "name":  "qwer" }'
+
+This lists all dta available
+
+    pgcrud test_profile list
 
 Notice the replacement of the PK column with __. If the column name is given explicitly it will be updated. The results of this depend on you table definition.
 
-    pgcrud.py delete person 9
+    pgcrud.py test_profile delete person 9
 
 
 Restrictions
@@ -61,3 +65,4 @@ TODO
 - for update, rethink the format of passing the id to update
 - add proper validation of input parameters, specially what gets interpolated into sql.
 - handle failures
+- for listing, allow for pagination
