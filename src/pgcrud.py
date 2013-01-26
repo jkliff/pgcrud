@@ -56,7 +56,7 @@ def create (cur, entity, data):
     cols, vals = __split_data (data)
     pk = __get_pk (cur, entity)
 
-    sql = """insert into %s (%s) values (%s) 
+    sql = """insert into %s (%s) values (%s)
 returning %s;""" % (
         entity,
         ', '.join (cols),
