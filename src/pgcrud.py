@@ -139,6 +139,11 @@ def main (argv):
         'list':     retrieve_all
     }
 
+
+    if len (argv) < 4:
+        echo 'Not enough arguments. Check your call.'
+        return -2
+
     profile = argv [1]
     method = argv [2]
     entity = argv [3]
