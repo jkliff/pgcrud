@@ -141,7 +141,7 @@ def main (argv):
 
 
     if len (argv) < 4:
-        echo 'Not enough arguments. Check your call.'
+        print 'Not enough arguments. Check your call.'
         return -2
 
     profile = argv [1]
