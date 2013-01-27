@@ -5,6 +5,7 @@ import psycopg2
 import psycopg2.extras
 import yaml
 import os
+import traceback
 
 def __load_profile_def (profile):
     f = os.path.expanduser ('~/.pgcrud/profiles')
@@ -22,15 +23,41 @@ def __get_conn (conn_str):
     conn = psycopg2.connect (conn_str)
     return conn
 
-def __get_pk (cur, table):
-    sql = """select attname
+def __get_pk (cur, entity):
+
+    entity_parts = entity.split ('.')
+
+    sql = None
+    data = None
+
+    if len (entity) > 1:
+        # assume schema is defined
+        schema = entity_parts[0]
+        table = entity_parts[1]
+
+        sql = """select attname
+from pg_catalog.pg_class
+    join pg_catalog.pg_namespace on relnamespace = pg_namespace.oid
+    join pg_catalog.pg_attribute on attrelid = pg_class.oid and attnum > 0
+    join pg_constraint on conrelid = pg_class.oid and attnum = any (conkey)
+where relname = %(table_name)s
+    and nspname = %(schema_name)s
+    and contype = 'p';
+"""
+
+        data = {'table_name': table, 'schema_name': schema}
+    else:
+        table = entity
+        sql = """select attname
 from pg_catalog.pg_class
     join pg_catalog.pg_attribute on attrelid = pg_class.oid and attnum > 0
     join pg_constraint on conrelid = pg_class.oid and attnum = any (conkey)
 where relname = %(table_name)s
     and contype = 'p';
 """
-    cur.execute (sql, {'table_name': table})
+        data = {'table_name': table}
+
+    cur.execute (sql, data)
     pk = cur.fetchone ()
     if pk is None:
         raise Exception ('PGCrud does not support this entity: either it has no pk or does not exists.')
@@ -149,7 +176,11 @@ def main (argv):
     entity = argv [3]
     data = None
     if method != 'list':
-        data = json.loads (argv [4])
+        try:
+            data = json.loads (argv [4])
+        except ValueError, e:
+            print e
+            return -11
 
     try:
         conn = __get_conn (__load_profile_def (profile))

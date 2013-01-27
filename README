@@ -16,7 +16,10 @@ Usage
 
 General command format is
 pgcrud.py PROFILE METHOD ENTITY DATA
-where all arguments are required and PROFILE is the profile name from the configuration file (see below), METHOD is one of the CRUD operations (create, retrieve, update or delete), ENTITY is the name of the entity (table) being referenced and DATA is the data being manipulated (its semantics depends of METHOD).
+where all arguments are required and PROFILE is the profile name from the configuration file (see below),
+  - METHOD is one of the CRUD operations (create, retrieve, update or delete),
+  - ENTITY is the name of the entity (table or schema.table) being referenced and
+  - DATA is the data being manipulated (its semantics depends of METHOD).
 
 PROFILEs com from the configuration file (~/.pgcrud/profiles) and contain a YAML formatted list of connection configurations.
 
